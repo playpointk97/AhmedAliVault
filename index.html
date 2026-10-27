@@ -287,6 +287,35 @@
         .vault-info .item-id { font-size: 0.75rem; color: #818cf8; margin-bottom: 2px; font-family: monospace; }
         .vault-info p { font-size: 0.85rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+        /* تنسيق المهام داخل نموذج العرض والتعديل */
+        .task-row-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(11, 15, 25, 0.6);
+            border: 1px solid var(--border);
+            padding: 10px 14px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+        .task-row-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: var(--accent-color);
+        }
+        .task-row-item input[type="text"] {
+            border: none;
+            background: transparent;
+            padding: 4px;
+            font-size: 0.95rem;
+        }
+        .task-row-item input[type="text"].completed-task-text {
+            text-decoration: line-through;
+            color: var(--text-muted);
+            opacity: 0.7;
+        }
+
         .meta-info-box {
             background: rgba(11, 15, 25, 0.8);
             border: 1px solid var(--border);
@@ -464,11 +493,12 @@
             <button class="tab-btn active" id="tabAll" onclick="switchTab('all')">الكل</button>
             <button class="tab-btn" id="tabNotes" onclick="switchTab('notes')">📝 ملاحظات عادية</button>
             <button class="tab-btn" id="tabPass" onclick="switchTab('pass')">🔑 كلمات السر</button>
+            <button class="tab-btn" id="tabTasks" onclick="switchTab('tasks')">✅ قائمة المهام</button>
         </div>
 
         <!-- البحث -->
         <div class="search-box">
-            <input type="text" id="searchInput" placeholder="بحث شامل (بالعنوان، المحتوى، أو أرقام الـ ID)..." oninput="filterList()">
+            <input type="text" id="searchInput" placeholder="بحث شامل (بالعنوان، المحتوى، المهام، أو أرقام الـ ID)..." oninput="filterList()">
         </div>
 
         <!-- الخزينة المؤمنة -->
@@ -491,6 +521,7 @@
         <div class="fab-menu" id="fabMenu">
             <button class="fab-option" onclick="openFullscreenCreate('pass')">🔑 حفظ كلمة سر</button>
             <button class="fab-option" onclick="openFullscreenCreate('note')">📝 ملاحظة عادية</button>
+            <button class="fab-option" onclick="openFullscreenCreate('task')">✅ قائمة مهام جديدة</button>
         </div>
         <button class="fab" onclick="toggleFabMenu()">+</button>
     </div>
@@ -778,6 +809,11 @@
         }
 
         async function initFolderAccess() {
+            // طلب إذن الإشعارات عند بدء التطبيق
+            if ("Notification" in window && Notification.permission !== "granted") {
+                Notification.requestPermission();
+            }
+
             const savedHandle = await getHandleFromDB();
             if (savedHandle) {
                 dirHandle = savedHandle;
@@ -1064,7 +1100,7 @@
 
         function switchTab(tab) {
             currentTab = tab;
-            ['all', 'notes', 'pass'].forEach(t => document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}`).classList.remove('active'));
+            ['all', 'notes', 'pass', 'tasks'].forEach(t => document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}`).classList.remove('active'));
             document.getElementById(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`).classList.add('active');
             filterList();
         }
@@ -1077,6 +1113,28 @@
             }
             const passInput = document.getElementById('fullscreenPassPass');
             if (passInput) passInput.value = pass;
+        }
+
+        function addCreateTaskRow() {
+            const container = document.getElementById('createTaskRowsContainer');
+            const rowCount = container.children.length + 1;
+            const div = document.createElement('div');
+            div.className = 'task-row-item';
+            div.innerHTML = `
+                <input type="checkbox" onchange="toggleTaskRowStyle(this)">
+                <input type="text" placeholder="اكتب المهمة رقم ${rowCount}..." style="flex:1;">
+                <button class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">حذف</button>
+            `;
+            container.appendChild(div);
+        }
+
+        function toggleTaskRowStyle(checkbox) {
+            const txtInput = checkbox.nextElementSibling;
+            if (checkbox.checked) {
+                txtInput.classList.add('completed-task-text');
+            } else {
+                txtInput.classList.remove('completed-task-text');
+            }
         }
 
         function openFullscreenCreate(type) {
@@ -1100,7 +1158,7 @@
                     <div class="form-group"><label>العنوان</label><input type="text" id="fullscreenNoteTitle" placeholder="العنوان..."></div>
                     <div class="form-group" style="flex:1; display:flex; flex-direction:column;"><label>الموضوع</label><textarea id="fullscreenNoteContent" placeholder="المحتوى..."></textarea></div>
                 `;
-            } else {
+            } else if (type === 'pass') {
                 titleEl.innerText = 'حفظ كلمة سر جديدة';
                 bodyEl.innerHTML = `
                     <div class="form-group">
@@ -1115,6 +1173,33 @@
                             <button class="btn btn-warning" style="padding:2px 8px; font-size:0.75rem;" onclick="generateStrongPassword()">توليد كلمة سر قوية ⚡</button>
                         </div>
                         <input type="text" id="fullscreenPassPass" placeholder="كلمة المرور...">
+                    </div>
+                `;
+            } else {
+                titleEl.innerText = 'إنشاء قائمة مهام جديدة';
+                bodyEl.innerHTML = `
+                    <div class="form-group">
+                        <label>معرف الملف (ID)</label>
+                        <div class="static-id-badge" id="fullscreenTaskId">${uniqueId}</div>
+                    </div>
+                    <div class="form-group"><label>اسم المهمة العامة / المشروع</label><input type="text" id="fullscreenTaskTitle" placeholder="اكتب اسم المهمة العامة..."></div>
+                    <div class="form-group" style="flex:1; display:flex; flex-direction:column;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <label style="margin:0;">بنود المهام (1, 2, 3...)</label>
+                            <button class="btn btn-warning btn-sm" onclick="addCreateTaskRow()">+ إضافة مهمة فرعية</button>
+                        </div>
+                        <div id="createTaskRowsContainer" style="display:flex; flex-direction:column; gap:8px;">
+                            <div class="task-row-item">
+                                <input type="checkbox" onchange="toggleTaskRowStyle(this)">
+                                <input type="text" placeholder="اكتب المهمة رقم 1..." style="flex:1;">
+                                <button class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">حذف</button>
+                            </div>
+                            <div class="task-row-item">
+                                <input type="checkbox" onchange="toggleTaskRowStyle(this)">
+                                <input type="text" placeholder="اكتب المهمة رقم 2..." style="flex:1;">
+                                <button class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">حذف</button>
+                            </div>
+                        </div>
                     </div>
                 `;
             }
@@ -1132,14 +1217,16 @@
                     if (entry.kind === 'file' && entry.name.endsWith('.txt')) {
                         const file = await entry.getFile();
                         const content = await file.text();
-                        const isPass = entry.name.startsWith('pass_');
+                        
+                        let itemType = 'note';
+                        if (entry.name.startsWith('pass_')) itemType = 'pass';
+                        else if (entry.name.startsWith('task_')) itemType = 'task';
                         
                         let fileId = "ID: 000000";
                         let createdAt = "N/A";
                         let updatedAt = "N/A";
 
                         const lines = content.split('\n');
-                        
                         let contentStartIndex = 0;
                         if (lines[0] && lines[0].startsWith('ID:')) {
                             fileId = lines[0].trim();
@@ -1156,7 +1243,7 @@
 
                         let rawBodyLines = lines.slice(contentStartIndex);
                         let displayBodyLines = rawBodyLines.map(l => {
-                            if (isPass && l.includes('كلمة المرور:')) {
+                            if (itemType === 'pass' && l.includes('كلمة المرور:')) {
                                 let encodedVal = l.replace('كلمة المرور:', '').trim();
                                 return `كلمة المرور: ${deobfuscateText(encodedVal)}`;
                             }
@@ -1165,8 +1252,8 @@
 
                         items.push({
                             fileName: entry.name,
-                            type: isPass ? 'pass' : 'note',
-                            title: entry.name.replace('.txt', '').replace(/^(note_|pass_)/, ''),
+                            type: itemType,
+                            title: entry.name.replace('.txt', '').replace(/^(note_|pass_|task_)/, ''),
                             fileId: fileId,
                             createdAt: createdAt,
                             updatedAt: updatedAt,
@@ -1180,7 +1267,8 @@
                 document.getElementById('statsBar').style.display = 'flex';
                 const notesCount = items.filter(i => i.type === 'note').length;
                 const passCount = items.filter(i => i.type === 'pass').length;
-                document.getElementById('statsText').innerText = `ملاحظات (${notesCount}) | كلمات سر (${passCount})`;
+                const tasksCount = items.filter(i => i.type === 'task').length;
+                document.getElementById('statsText').innerText = `ملاحظات (${notesCount}) | كلمات سر (${passCount}) | مهام (${tasksCount})`;
 
                 filterList();
             } catch (err) { console.error(err); }
@@ -1189,15 +1277,17 @@
         async function saveNewItem() {
             if (!dirHandle) { showCustomAlert("الرجاء ربط المجلد أولاً."); return; }
 
-            let title = '', bodyContent = '', fileId = document.getElementById('fullscreenNoteId')?.innerText || document.getElementById('fullscreenPassId')?.innerText;
+            let title = '', bodyContent = '', fileId = '';
             const nowTimeStr = formatEnglishDateTime(new Date());
 
             if (currentCreateType === 'note') {
+                fileId = document.getElementById('fullscreenNoteId').innerText;
                 title = document.getElementById('fullscreenNoteTitle').value.trim();
                 const body = document.getElementById('fullscreenNoteContent').value.trim();
                 if (!title || !body) { showCustomAlert("برجاء ملء جميع الحقول."); return; }
                 bodyContent = body;
-            } else {
+            } else if (currentCreateType === 'pass') {
+                fileId = document.getElementById('fullscreenPassId').innerText;
                 title = document.getElementById('fullscreenPassTitle').value.trim();
                 const user = document.getElementById('fullscreenPassUser').value.trim();
                 const pass = document.getElementById('fullscreenPassPass').value.trim();
@@ -1205,12 +1295,32 @@
                 
                 const encryptedPass = obfuscateText(pass);
                 bodyContent = `البريد أو اسم المستخدم: ${user}\nكلمة المرور: ${encryptedPass}`;
+            } else {
+                fileId = document.getElementById('fullscreenTaskId').innerText;
+                title = document.getElementById('fullscreenTaskTitle').value.trim();
+                if (!title) { showCustomAlert("يرجى إدخال اسم المهمة."); return; }
+
+                const rowItems = document.querySelectorAll('#createTaskRowsContainer .task-row-item');
+                let taskLines = [];
+                rowItems.forEach((row, idx) => {
+                    const chk = row.querySelector('input[type="checkbox"]').checked ? '1' : '0';
+                    const txt = row.querySelector('input[type="text"]').value.trim();
+                    if (txt) {
+                        taskLines.push(`[${chk}] ${idx + 1}. ${txt}`);
+                    }
+                });
+
+                if (taskLines.length === 0) {
+                    showCustomAlert("يرجى إضافة مهمة فرعية واحدة على الأقل.");
+                    return;
+                }
+                bodyContent = taskLines.join('\n');
             }
 
             const fileContent = `${fileId}\nCreated: ${nowTimeStr}\nUpdated: ${nowTimeStr}\n${bodyContent}`;
 
             const cleanTitle = title.replace(/[^a-zA-Z0-9а-яА-Я؀-ۿ]/g, '_');
-            const fileName = `${currentCreateType}_${cleanTitle}.txt`;
+            const fileName = `${currentCreateType === 'task' ? 'task' : currentCreateType}_${cleanTitle}.txt`;
             try {
                 const fileHandle = await dirHandle.getFileHandle(fileName, { create: true });
                 const writable = await fileHandle.createWritable();
@@ -1257,11 +1367,9 @@
             if (!item) return;
             activeItemFileName = fileName;
 
-            document.getElementById('viewEditHeaderTitle').innerText = item.type === 'pass' ? 'تعديل كلمة السر' : 'تعديل الملاحظة';
+            document.getElementById('viewEditHeaderTitle').innerText = item.type === 'pass' ? 'تعديل كلمة السر' : (item.type === 'task' ? 'تعديل المهام' : 'تعديل الملاحظة');
             const bodyEl = document.getElementById('viewEditFullscreenBody');
             
-            let contentWithoutMeta = item.displayBody;
-
             if (item.type === 'note') {
                 bodyEl.innerHTML = `
                     <div class="form-group">
@@ -1284,10 +1392,10 @@
                             <label style="margin:0;">الموضوع</label>
                             <button class="btn btn-warning" style="padding:2px 8px; font-size:0.75rem;" onclick="copyFieldText('editContent')">📋 نسخ الموضوع</button>
                         </div>
-                        <textarea id="editContent">${contentWithoutMeta}</textarea>
+                        <textarea id="editContent">${item.displayBody}</textarea>
                     </div>
                 `;
-            } else {
+            } else if (item.type === 'pass') {
                 let user = '', pass = '';
                 const bodyLines = item.displayBody.split('\n');
                 bodyLines.forEach(l => {
@@ -1325,8 +1433,79 @@
                         <input type="text" id="editPassword" value="${pass}">
                     </div>
                 `;
+            } else {
+                let taskRowsHtml = '';
+                const bodyLines = item.rawContent.split('\n').slice(3); // تخطي الـ ID والتاريخ
+                bodyLines.forEach(line => {
+                    const match = line.match(/^\[([01])\]\s*(.*)$/);
+                    if (match) {
+                        const isChecked = match[1] === '1' ? 'checked' : '';
+                        const textVal = match[2];
+                        const textClass = isChecked ? 'completed-task-text' : '';
+                        taskRowsHtml += `
+                            <div class="task-row-item">
+                                <input type="checkbox" ${isChecked} onchange="toggleTaskRowStyle(this); triggerTaskNotification('${item.title}', this);">
+                                <input type="text" value="${textVal}" class="${textClass}" style="flex:1;">
+                                <button class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">حذف</button>
+                            </div>
+                        `;
+                    }
+                });
+
+                bodyEl.innerHTML = `
+                    <div class="form-group">
+                        <label>معرف الملف (ID)</label>
+                        <div class="static-id-badge" id="editFileId">${item.fileId}</div>
+                        <div class="meta-info-box">
+                            <div>أنشأت: <span>${item.createdAt}</span></div>
+                            <div>عدلت: <span>${item.updatedAt}</span></div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>اسم المهمة العامة</label>
+                        <input type="text" id="editTitle" value="${item.title}">
+                    </div>
+                    <div class="form-group" style="flex:1; display:flex; flex-direction:column;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <label style="margin:0;">قائمة المهام الفرعية</label>
+                            <button class="btn btn-warning btn-sm" onclick="addEditTaskRow()">+ إضافة مهمة</button>
+                        </div>
+                        <div id="editTaskRowsContainer" style="display:flex; flex-direction:column; gap:8px;">
+                            ${taskRowsHtml}
+                        </div>
+                    </div>
+                `;
             }
             showFullscreenModal('viewEditFullscreenModal');
+        }
+
+        function addEditTaskRow() {
+            const container = document.getElementById('editTaskRowsContainer');
+            const rowCount = container.children.length + 1;
+            const div = document.createElement('div');
+            div.className = 'task-row-item';
+            div.innerHTML = `
+                <input type="checkbox" onchange="toggleTaskRowStyle(this)">
+                <input type="text" placeholder="مهمة جديدة ${rowCount}..." style="flex:1;">
+                <button class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">حذف</button>
+            `;
+            container.appendChild(div);
+        }
+
+        // إطلاق إشعار هاتف فعلي عند إنجاز مهمة
+        function triggerTaskNotification(taskName, checkbox) {
+            if ("Notification" in window && Notification.permission === "granted") {
+                const statusMsg = checkbox.checked ? "✅ تم إنجاز مهمة!" : "⏳ ما زالت قيد التنفيذ!";
+                const notification = new Notification(`إشعار مهام: ${taskName}`, {
+                    body: `${statusMsg} اضغط هنا لفتح التطبيق ومراجعة المهام.`,
+                    icon: "https://cdn-icons-png.flaticon.com/512/906/906334.png"
+                });
+                
+                notification.onclick = function() {
+                    window.focus();
+                    notification.close();
+                };
+            }
         }
 
         function askConfirmUpdate() {
@@ -1352,13 +1531,25 @@
                 const body = document.getElementById('editContent').value.trim();
                 if (!newTitle || !body) return;
                 bodyContent = body;
-            } else {
+            } else if (oldItem.type === 'pass') {
                 const user = document.getElementById('editUsername').value.trim();
                 const pass = document.getElementById('editPassword').value.trim();
                 if (!newTitle || !user || !pass) return;
                 
                 const encryptedPass = obfuscateText(pass);
                 bodyContent = `البريد أو اسم المستخدم: ${user}\nكلمة المرور: ${encryptedPass}`;
+            } else {
+                const rowItems = document.querySelectorAll('#editTaskRowsContainer .task-row-item');
+                let taskLines = [];
+                rowItems.forEach((row, idx) => {
+                    const chk = row.querySelector('input[type="checkbox"]').checked ? '1' : '0';
+                    const txt = row.querySelector('input[type="text"]').value.trim();
+                    if (txt) {
+                        taskLines.push(`[${chk}] ${idx + 1}. ${txt}`);
+                    }
+                });
+                if (taskLines.length === 0) return;
+                bodyContent = taskLines.join('\n');
             }
 
             const fileContent = `${fileId}\nCreated: ${createdAt}\nUpdated: ${updatedTimeStr}\n${bodyContent}`;
@@ -1407,6 +1598,7 @@
             const filtered = items.filter(item => {
                 if (currentTab === 'notes' && item.type !== 'note') return false;
                 if (currentTab === 'pass' && item.type !== 'pass') return false;
+                if (currentTab === 'tasks' && item.type !== 'task') return false;
 
                 const titleMatch = item.title.toLowerCase().includes(query);
                 const contentMatch = item.displayBody.toLowerCase().includes(query);
@@ -1423,7 +1615,10 @@
 
             listContainer.innerHTML = '';
             filtered.forEach(item => {
-                const icon = item.type === 'pass' ? '🔑' : '📝';
+                let icon = '📝';
+                if (item.type === 'pass') icon = '🔑';
+                else if (item.type === 'task') icon = '✅';
+
                 const div = document.createElement('div');
                 div.className = 'vault-item';
                 div.onclick = () => openItemDetails(item.fileName);
